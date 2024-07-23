@@ -12,8 +12,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
 """ 
-longitudinal_data.pkl represents the time series data and is an array with shape of
- (# of samples, # of time points, # of features) (1414, 7, 5).
+longitudinal_NACC_data.pkl represents the time series data and is an array with shape of
+ (# of samples, # of time points, # of features).
 """
 
 with open(current_directory + '/longitudinal_NACC_data.pkl', 'rb') as f:
@@ -24,7 +24,7 @@ for i in range(long_data.shape[1]):
     long_data_norm[:, i, :] = utils.z_normalize(long_data[:, i, :])
 """
 
-label.pkl represents the label data and is an array with shape of (# of samples, # of time points, 1) (250, 7, 1).
+label_NACC.pkl represents the label data and is an array with shape of (# of samples, # of time points, 1) (1414, 7, 1).
 The label values are 0 which represents MCI and 1 which represents AD.
 """
 with open(current_directory + '/label_NACC.pkl','rb') as f:
