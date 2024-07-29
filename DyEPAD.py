@@ -36,12 +36,13 @@ for i in range(long_data.shape[1]):
     DATA[i] = Data(x=torch.tensor(long_data_norm[:, i, :],dtype=torch.float32), edge_index=utils.create_undirected_knn_graph(long_data_norm[:, i, :],k=5),
                    y=torch.tensor(labels[:,i,0]).long())
 
+
 Zt = torch.zeros(())
 def train():
     model.train()
     optimizer.zero_grad()
     out0,Ztbar = model(data0.to(device),Zt.to(device),first)
-    loss1 = criterion(out0.to(device), labels_train.to(device))
+    loss1 = criterion(out0[train_mask].to(device), labels_train[train_mask].to(device))
     loss1.backward()
     optimizer.step()
     return loss1
@@ -54,66 +55,67 @@ def validate():
 
 max_epochs = 500
 insize0 = long_data.shape[2]
+sample_size = long_data.shape[0]
 hdsize0 = 512
 outsize = 2
 learning_rate = 0.003
 train_snapshots = 6
 test_time_point = 7
-Emb_tensor = torch.zeros((train_snapshots, long_data.shape[0], hdsize0 * 2))
-model = utils.DyIGCN(in_size0=insize0, hid_size0=hdsize0, out_size=outsize)
-model.to(device)
-for j in range(train_snapshots):
-    print('running snapshot #:', j)
-    if j == 0:
-        first = True
-        custom_gru_params = None
-    else:
-        first = False
-    data0 = DATA[j]
-    model = utils.DyIGCN(in_size0=insize0, hid_size0=hdsize0, out_size=outsize)
-    model.to(device)
-    # If it's not the first snapshot, load the saved CustomGRU parameters
-    # if custom_gru_params is not None:
-    #     model.gru_model.load_state_dict(custom_gru_params)
-    labels_train = data0.y
-    weights = torch.tensor([1, 2], dtype=torch.float).to(device)
-    criterion = torch.nn.CrossEntropyLoss(weight=weights)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    train_loss = []
-
-    for epoch in range(max_epochs):
-        print('epoch:', epoch)
-        loss0 = train()
-        print("train_loss:", loss0)
-        train_loss.append(loss0)
-    out0, Ztbar = validate()
-    Zt = Ztbar.detach()
-    Emb_tensor[j, :, :] = Zt
-
-    del model, DATA[j]
-    gc.collect()
-    torch.cuda.empty_cache()
-
 ac = list()
 f1 = list()
 aucroc = list()
 y_visit7 = DATA[test_time_point-1].y
-swapped_array = long_data_norm.swapaxes(0, 1)
-swapped_array = swapped_array[0:train_snapshots,:,:]
+
+model = utils.DyIGCN(in_size0=insize0, hid_size0=hdsize0, out_size=outsize)
+model.to(device)
 
 for i in [61,76,3,7,120,20,16]:
-    train_idx, test_idx = train_test_split(np.arange(len(y_visit7)), test_size=0.2, shuffle=True, stratify=y_visit7, random_state=i)
+    train_idx, test_idx = train_test_split(np.arange(len(y_visit7)),
+                                           test_size=0.2, shuffle=True, stratify=y_visit7, random_state=i)
+    train_mask = np.array([i in set(train_idx) for i in range(sample_size)])
+    Emb_tensor = torch.zeros((train_snapshots, long_data.shape[0], hdsize0 * 2))
+    for j in range(train_snapshots):
+        print('running snapshot #:', j)
+        if j == 0:
+            first = True
+            custom_gru_params = None
+        else:
+            first = False
+        data0 = DATA[j]
+        model = utils.DyIGCN(in_size0=insize0, hid_size0=hdsize0, out_size=outsize)
+        model.to(device)
+        # If it's not the first snapshot, load the saved CustomGRU parameters
+        # if custom_gru_params is not None:
+        #     model.gru_model.load_state_dict(custom_gru_params)
+        labels_train = data0.y
+        weights = torch.tensor([1, 2], dtype=torch.float).to(device)
+        criterion = torch.nn.CrossEntropyLoss(weight=weights)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        train_loss = []
+
+        for epoch in range(max_epochs):
+            print('epoch:', epoch)
+            loss0 = train()
+            print("train_loss:", loss0)
+            train_loss.append(loss0)
+        out0, Ztbar = validate()
+        Zt = Ztbar.detach()
+        Emb_tensor[j, :, :] = Zt
+
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+
+
     emb_tensor_train = np.array(Emb_tensor[:,train_idx,:])
     emb_tensor_test = np.array(Emb_tensor[:,test_idx,:])
-    emb_tensor_train_row = np.array(swapped_array [:,train_idx,:])
-    emb_tensor_test_row = np.array(swapped_array [:,test_idx,:])
     gram_tensor_train = utils.t_poly_kernel(emb_tensor_train,emb_tensor_train,degree=3, alpha=1, c=0,transform="hartley")
     gram_tensor_test = utils.t_poly_kernel(emb_tensor_train,emb_tensor_test,degree=3, alpha=1, c=0,transform="hartley")
     # Initialize and train the MKL algorithm
     mkl = EasyMKL(lam=1)  # You can tune the lambda parameter
     # Use list comprehension to create K_train
-    K_train = [gram_tensor_train[i, :, :] for i in range(train_snapshots)]
-    K_test = [gram_tensor_test[i, :, :].T for i in range(train_snapshots)]
+    K_train = [gram_tensor_train[ell, :, :] for ell in range(train_snapshots)]
+    K_test = [gram_tensor_test[ell, :, :].T for ell in range(train_snapshots)]
 
     mkl.fit(K_train, y_visit7[train_idx])
     # Predict and evaluate
