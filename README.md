@@ -11,5 +11,5 @@ National Alzheimer’s Coordinating Center (NACC) datasets  dataset was employed
    * `longitudinal_NACC_data.pkl`: The time series EHR data is organized in a format where the dimensions correspond to the number of samples, the number of time points, and the number of features.
 
 We note that users can adjust the training and testing visits in `DyEPAD.py`. 
-   * Line 60: the number of visits to train.
-   * Line 61: the visit to make predictions.
+   * Line 62: the number of visits to train.
+   * Line 63: the visit to make predictions.
