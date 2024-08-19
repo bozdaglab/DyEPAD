@@ -16,7 +16,7 @@ longitudinal_NACC_data.pkl represents the time series data and is an array with 
  (# of samples, # of time points, # of features).
 """
 
-with open(current_directory + '/longitudinal_NACC_data.pkl', 'rb') as f:
+with open(current_directory + '/longitudinal_data.pkl', 'rb') as f:
   long_data = pickle.load(f)
 #z normalization
 long_data_norm = np.zeros((long_data.shape[0],long_data.shape[1],long_data.shape[2]))
@@ -27,7 +27,7 @@ for i in range(long_data.shape[1]):
 label_NACC.pkl represents the label data and is an array with shape of (# of samples, # of time points, 1) (1414, 7, 1).
 The label values are 0 which represents MCI and 1 which represents AD.
 """
-with open(current_directory + '/label_NACC.pkl','rb') as f:
+with open(current_directory + '/label.pkl','rb') as f:
     labels = pickle.load(f)
 labels = labels.astype(np.int64)
 
