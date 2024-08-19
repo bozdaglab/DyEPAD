@@ -7,8 +7,8 @@ Graphical illustration of DyEPAD. (a) DyEPAD utilizes GCN layers to derive node 
 After having all files in the directory, run `DyEPAD.py`.
 ### Inputs
 National Alzheimer’s Coordinating Center (NACC) datasets  dataset was employed for the training and testing of DyEPAD. 
-   * `label_NACC.pkl`: The ground truth labels. (# of samples, # of time points, 1) (1414, 7, 1)
-   * `longitudinal_NACC_data.pkl`: The time series EHR data is organized in a format where the dimensions correspond to the number of samples, the number of time points, and the number of features.
+   * `label.pkl`: The ground truth labels. (# of samples, # of time points, 1) (1414, 7, 1)
+   * `longitudinal_data.pkl`: The time series synthetic EHR data is organized in a format where the dimensions correspond to the number of samples, the number of time points, and the number of features.
 
 We note that users can adjust the training and testing visits in `DyEPAD.py`. 
    * Line 62: the number of visits to train.
